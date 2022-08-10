@@ -1,4 +1,4 @@
-# ExamplePlugin
+# ZekCau
 
 This repository contains a basic example of a modern PocketMine-MP plugin, and a handful of the API features.
 

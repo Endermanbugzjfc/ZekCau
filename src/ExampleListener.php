@@ -21,7 +21,7 @@
 
 declare(strict_types=1);
 
-namespace keopiwauyu\ExamplePlugin;
+namespace Endermanbugzjfc\ZekCau;
 
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerChatEvent;

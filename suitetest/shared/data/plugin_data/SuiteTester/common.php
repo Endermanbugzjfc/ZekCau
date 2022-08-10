@@ -3,7 +3,7 @@
 use SOFe\AwaitStd\AwaitStd;
 use SOFe\SuiteTester\Await;
 use SOFe\SuiteTester\Main;
-use keopiwauyu\HyundaiCommando\MainClass;
+use Endermanbugzjfc\HyundaiCommando\MainClass;
 use muqsit\fakeplayer\network\listener\ClosureFakePlayerPacketListener;
 use pocketmine\Server;
 use pocketmine\command\Command;

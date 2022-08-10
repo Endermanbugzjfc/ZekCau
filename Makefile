@@ -1,13 +1,13 @@
-# EXAMPLE_PLUGIN
-# ExamplePlugin
-# example plugin
-# example-plugin
-# exampleplugin
+# ZEK_CAU
+# ZekCau
+# zek cau
+# zek-cau
+# zekcau
 
 PHP = $(shell which php) -dphar.readonly=0
 COMPOSER = dev/composer.phar
 
-SRC_NAMESPACE_PREFIX = keopiwauyu/ExamplePlugin
+SRC_NAMESPACE_PREFIX = Endermanbugzjfc/ZekCau
 
 REUSE_MYSQL = false
 
@@ -19,15 +19,15 @@ DIFF = diff -y --suppress-common-lines --width=$(shell tput cols)
 
 SUITE_TESTS_CONFIG_REGEN = false
 
-# EXAMPLE_PLUGIN_SOURCE_FILES = plugin.yml $(shell find src resources -type f)
-EXAMPLE_PLUGIN_SOURCE_FILES = plugin.yml $(shell find src -type f)
-# EXAMPLE_PLUGIN_VIRIONS = dev/await-generator.phar dev/await-std.phar dev/libasynql.phar dev/rwlock.phar
-EXAMPLE_PLUGIN_VIRIONS = dev/await-generator.phar dev/await-std.phar dev/libMarshal.phar dev/Commando.phar
+# ZEK_CAU_SOURCE_FILES = plugin.yml $(shell find src resources -type f)
+ZEK_CAU_SOURCE_FILES = plugin.yml $(shell find src -type f)
+# ZEK_CAU_VIRIONS = dev/await-generator.phar dev/await-std.phar dev/libasynql.phar dev/rwlock.phar
+ZEK_CAU_VIRIONS = dev/await-generator.phar dev/await-std.phar dev/libMarshal.phar dev/Commando.phar
 
 # .PHONY: all phpstan fmt debug/suite-mysql suitetest $(SUITE_TESTS)
 .PHONY: all phpstan fmt suitetest $(SUITE_TESTS)
 
-default: phpstan dev/ExamplePlugin.phar
+default: phpstan dev/ZekCau.phar
 
 # phpstan: src/SOFe/Capital/Database/RawQueries.php vendor
 phpstan: vendor
@@ -54,15 +54,15 @@ dev/src: src Makefile
 dev/resources: resources
 	cp -rf resources dev/resources
 
-# dev/ExamplePlugin.phar: $(EXAMPLE_PLUGIN_SOURCE_FILES) dev/ConsoleScript.php $(EXAMPLE_PLUGIN_VIRIONS) dev/plugin.yml dev/src dev/resources
-dev/ExamplePlugin.phar: $(EXAMPLE_PLUGIN_SOURCE_FILES) dev/ConsoleScript.php $(EXAMPLE_PLUGIN_VIRIONS) dev/plugin.yml dev/src
+# dev/ZekCau.phar: $(ZEK_CAU_SOURCE_FILES) dev/ConsoleScript.php $(ZEK_CAU_VIRIONS) dev/plugin.yml dev/src dev/resources
+dev/ZekCau.phar: $(ZEK_CAU_SOURCE_FILES) dev/ConsoleScript.php $(ZEK_CAU_VIRIONS) dev/plugin.yml dev/src
 # 	$(PHP) dev/ConsoleScript.php --make plugin.yml,src,resources --relative "dev" --out $@
 	$(PHP) dev/ConsoleScript.php --make plugin.yml,src --relative "dev" --out $@
 
-	for file in $(EXAMPLE_PLUGIN_VIRIONS); do $(PHP) $$file $@ keopiwauyu\\ExamplePlugin\\Virions\\$$(tr -dc A-Za-z </dev/urandom | head -c 8)\\ ; done
+	for file in $(ZEK_CAU_VIRIONS); do $(PHP) $$file $@ Endermanbugzjfc\\ZekCau\\Virions\\$$(tr -dc A-Za-z </dev/urandom | head -c 8)\\ ; done
 
 # src/SOFe/Capital/Database/RawQueries.php: dev/libasynql.phar resources/mysql/* resources/sqlite/*
-# 	$(PHP) dev/libasynql.phar fx src/ keopiwauyu\\ExamplePlugin\\Database\\RawQueries --struct 'final class' --spaces 4 --sql resources --prefix capital
+# 	$(PHP) dev/libasynql.phar fx src/ Endermanbugzjfc\\ZekCau\\Database\\RawQueries --struct 'final class' --spaces 4 --sql resources --prefix capital
 
 dev/composer.phar: Makefile
 	cd dev && wget -O - https://getcomposer.org/installer | $(PHP)
@@ -96,7 +96,7 @@ dev/libMarshal.phar: Makefile
 	touch $@
 
 dev/Commando.phar: Makefile
-	wget -O $@ https://poggit.pmmp.io/v.dl/keopiwauyu/Commando/Commando/^3.1.0
+	wget -O $@ https://poggit.pmmp.io/v.dl/Endermanbugzjfc/Commando/Commando/^3.1.0
 	touch $@
 
 dev/SuiteTester.phar: suitetest/plugin/plugin.yml \
@@ -117,11 +117,11 @@ dev/FakePlayer.phar: Makefile
 
 suitetest: $(SUITE_TESTS)
 
-# SKIP_MYSQL = true # no mysql in example plugin
+# SKIP_MYSQL = true # no mysql in zek cau
 
-# $(SUITE_TESTS): dev/ExamplePlugin.phar dev/FakePlayer.phar dev/InfoAPI.phar dev/SuiteTester.phar
-$(SUITE_TESTS): dev/ExamplePlugin.phar dev/FakePlayer.phar dev/SuiteTester.phar
-	$(eval CONTAINER_PREFIX := example-plugin-suite-$(shell basename $@))
+# $(SUITE_TESTS): dev/ZekCau.phar dev/FakePlayer.phar dev/InfoAPI.phar dev/SuiteTester.phar
+$(SUITE_TESTS): dev/ZekCau.phar dev/FakePlayer.phar dev/SuiteTester.phar
+	$(eval CONTAINER_PREFIX := zek-cau-suite-$(shell basename $@))
 	docker network create $(CONTAINER_PREFIX)-network || true
 # 	$(eval SKIP_MYSQL := $(REUSE_MYSQL) || test -f $@/options/skip-mysql)
 
@@ -139,7 +139,7 @@ $(SUITE_TESTS): dev/ExamplePlugin.phar dev/FakePlayer.phar dev/SuiteTester.phar
 	docker create --name $(CONTAINER_PREFIX)-pocketmine \
 		--network $(CONTAINER_PREFIX)-network \
 		-e SUITE_TESTER_OUTPUT=/data/output.json \
-		-e EXAMPLE_PLUGIN_DEBUG=1 \
+		-e ZEK_CAU_DEBUG=1 \
 		-u root \
 		pmmp/pocketmine-mp:$(POCKETMINE_VERSION) \
 		start-pocketmine --debug.level=2
@@ -148,7 +148,7 @@ $(SUITE_TESTS): dev/ExamplePlugin.phar dev/FakePlayer.phar dev/SuiteTester.phar
 	docker cp dev/FakePlayer.phar $(CONTAINER_PREFIX)-pocketmine:/plugins/FakePlayer.phar
 # 	docker cp dev/InfoAPI.phar $(CONTAINER_PREFIX)-pocketmine:/plugins/InfoAPI.phar
 	docker cp dev/SuiteTester.phar $(CONTAINER_PREFIX)-pocketmine:/plugins/SuiteTester.phar
-	docker cp dev/ExamplePlugin.phar $(CONTAINER_PREFIX)-pocketmine:/plugins/ExamplePlugin.phar
+	docker cp dev/ZekCau.phar $(CONTAINER_PREFIX)-pocketmine:/plugins/ZekCau.phar
 	docker cp $@/data $(CONTAINER_PREFIX)-pocketmine:/
 	docker cp suitetest/shared/data $(CONTAINER_PREFIX)-pocketmine:/
 
@@ -173,4 +173,4 @@ $(SUITE_TESTS): dev/ExamplePlugin.phar dev/FakePlayer.phar dev/SuiteTester.phar
 # 	command -v dot && dot -T svg -o $@/output/depgraph.svg $@/output/depgraph.dot || true
 
 # debug/suite-mysql:
-# 	docker exec -it example-plugin-suite-mysql-mysql bash -c 'mysql -u $$MYSQL_USER -p$$MYSQL_PASSWORD $$MYSQL_DATABASE'
+# 	docker exec -it zek-cau-suite-mysql-mysql bash -c 'mysql -u $$MYSQL_USER -p$$MYSQL_PASSWORD $$MYSQL_DATABASE'

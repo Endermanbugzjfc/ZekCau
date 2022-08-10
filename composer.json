@@ -1,5 +1,5 @@
 {
-   "name": "keopiwauyu/exampleplugin",
+   "name": "endermanbugzjfc/zekcau",
    "type": "library",
    "require": {
       "pocketmine/pocketmine-mp": "4.0.0",
@@ -16,12 +16,12 @@
    },
    "autoload": {
       "psr-4": {
-         "keopiwauyu\\ExamplePlugin\\": "src"
+         "Endermanbugzjfc\\ZekCau\\": "src"
       }
    },
    "autoload-dev": {
       "psr-4": {
-         "keopiwauyu\\HyundaiCommando\\": "tests"
+         "Endermanbugzjfc\\HyundaiCommando\\": "tests"
       }
    },
    "config": {
