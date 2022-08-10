@@ -19,14 +19,15 @@ final class CombatMode {
 	public static AwaitStd $std;
 
 	/**
-	 * @param \Closure(): \Generator<mixed, mixed, mixed, void> $until Creates a new generator which with can end the combat mode by resolving.
+	 * @param \Closure(Player $a, Player $b): \Generator<mixed, mixed, mixed, void> $until Creates a new generator which with can end the combat mode by resolving.
 	 */
 	public static function enable(Player $a, Player $b, \Closure $until) : void {
-		if (!isset(self::$std)) {
-			throw new \RuntimeException('Put this in your onEnable(): \Endermanbugzjfc\ZekCau\CombatMode::$std = \SOFe\AwaitStd\AwaitStd::init($this);');
-		}
-
 		Await::f2c(function () use ($a, $b, $until) : \Generator {
+			if (!isset(self::$std)) {
+				throw new \RuntimeException('Put this in your onEnable(): \Endermanbugzjfc\ZekCau\CombatMode::$std = \SOFe\AwaitStd\AwaitStd::init($this);');
+			}
+
+			$until = fn() => $until($a, $b);
 			$awaitUntil = $until();
 			while (true) {
 				$awaitEvent = self::$std->awaitEvent(
@@ -61,7 +62,7 @@ final class CombatMode {
 	}
 
 	/**
-	 * @param \Closure(): \Generator<mixed, mixed, mixed, void> $until Creates a new generator which with can end the combat mode by resolving.
+	 * @param \Closure(Player $a, Player $b): \Generator<mixed, mixed, mixed, void> $until Creates a new generator which with can end the combat mode by resolving.
 	 */
 	public static function autoEnable(callable $until) : void {
 		Await::f2c(function () use ($player) : \Generator {
