@@ -13,7 +13,7 @@ You must initialize an AwaitStd instance before calling any functions in CombatM
 CombatMode::$std = $std = AwaitStd::init($this);
 ```
 ## Usage
-autoEnable() will enable combat mode for two players when one attack another.
+`autoEnable()` will enable combat mode for two players when one attacks another.
 
 The `$until` callback is called every time when they attack each other, means the combat mode timer should be reset. So a new generator is returned:
 ```php
