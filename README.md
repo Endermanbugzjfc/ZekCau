@@ -1,6 +1,9 @@
 # ZekCau
 ZekCau (Cantonese of 隻抽, means "go it alone") is an example implementation of PocketMine-MP dual-players combat mode using [Await-Std](https://github.com/SOF3/await-std).
 
+## What is combat mode
+Combat modes are enabled in pairs. Two players in the same combat mode pair can only attack / get attacked by each other. Damage cannot be dealed if they try to attack any other entity or vice versa.
+
 But can also be used as an API (virion) or plugin for instant use.
 # API
 ## Preparation
