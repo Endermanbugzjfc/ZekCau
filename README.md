@@ -22,7 +22,7 @@ CombatMode::autoEnable(function () use ($std) : \Generator {
 	yield from $std->sleep(15 * 20);
 });
 ```
-You are not limited to just `yield from` a sleep-generator, side effects can be created too. Such as sending popups (or updating a boss bar):
+You are not limited to just `yield from` a sleep-generator, side effects can be made too. Such as sending popups (or updating a boss bar):
 ```php
 CombatMode::autoEnable(function (Player $a, Player $b) use ($std) : \Generator {
 	foreach ([$a, $b] as $player) {
@@ -47,7 +47,7 @@ CombatMode::autoEnable(function (Player $a, Player $b) use ($std, &$running) : \
 
 		yield from $std->sleep(20); // Sleep 1 second.
 		if ($running !== $current) {
-			return;
+			return; // New generator is created. Stop this one to not send overlapping popups and waste system resources (redundantly yielding from sleep-generator).
 		}
 	}
 
