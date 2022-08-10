@@ -45,6 +45,7 @@ CombatMode::autoEnable(function (Player $a, Player $b) use ($std) : \Generator {
 $running = 0;
 CombatMode::autoEnable(function (Player $a, Player $b) use ($std, &$running) : \Generator {
 	// Avoid two generators running at the same time and send overlapping popups.
+	// Notice that there is an & in &$running, which references $running outside of this (closure) function. PHP variable referencing explained: https://stackoverflow.com/a/10304027.
 	$current = ++$running;
 
 	for ($seconds = 15; $seconds > 0; $seconds--) {
