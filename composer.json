@@ -3,9 +3,6 @@
    "type": "library",
    "require": {
       "pocketmine/pocketmine-mp": "4.0.0",
-      "cortexpe/commando": "dev-master",
-      "sylvrs/libmarshal": "^1.4",
-      "sof3/await-generator": "^3.4",
       "sof3/await-std": "dev-master"
    },
    "require-dev": {
@@ -21,7 +18,7 @@
    },
    "autoload-dev": {
       "psr-4": {
-         "Endermanbugzjfc\\HyundaiCommando\\": "tests"
+         "Endermanbugzjfc\\ZekCau\\": "tests"
       }
    },
    "config": {
