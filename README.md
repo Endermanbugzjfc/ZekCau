@@ -15,14 +15,14 @@ CombatMode::$std = $std = AwaitStd::init($this);
 ## Usage
 `autoEnable()` will enable combat mode for two players when one attacks another.
 
-The `$until` callback is called every time when they attack each other, means the combat mode timer should be reset. So a new generator is returned:
+The `$until` callback is called every time when they attack each other, means the combat mode timer should be reset. So a new generator is created:
 ```php
 CombatMode::autoEnable(function () use ($std) : \Generator {
 	// Each combat mode will least for 15 seconds. The timer resets on damage.
 	yield from $std->sleep(15 * 20);
 });
 ```
-You are not limited to just return the generator, side effects can be created too. Such as sending popups (or updating a boss bar):
+You are not limited to just `yield from` a sleep-generator, side effects can be created too. Such as sending popups (or updating a boss bar):
 ```php
 CombatMode::autoEnable(function (Player $a, Player $b) use ($std) : \Generator {
 	foreach ([$a, $b] as $player) {
