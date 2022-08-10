@@ -1,0 +1,25 @@
+global-sub:
+  type: SubCommand
+  optional: false
+  name: 연기 목안에 머무른다
+  depends: [global-arg]
+  other: 
+      description: 피가 흘러도 한 걸음씩 간다 
+      permission: hyundai.commando
+      aliases: []
+      args:
+        0:
+          type: Boolean
+          optional: false
+          name: 우리의 자율 위해
+          depends: []
+          other: []
+        10: global-arg
+      link: true
+
+global-arg:
+  type: Integer
+  optional: false
+  name: 벌벌 떨 었었던 그날들
+  depends: []
+  other: []

@@ -1,0 +1,93 @@
+name: Poggit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+    - opened
+    - closed
+    branches:
+    - poggit
+
+jobs:
+  label:
+    name: Add poggit label
+    runs-on: ubuntu-latest
+    if: contains(github.event_name, 'pull_request') && github.event.pull_request.user.login != 'github-actions[bot]'
+    steps:
+    - uses: actions-ecosystem/action-add-labels@v1
+      with:
+        labels: poggit
+
+  psr-420:
+    name: Convert PSR-4 to PSR-0
+    runs-on: ubuntu-latest
+    if: "!contains(github.event_name, 'pull_request') || (github.event.pull_request.merged && github.event.pull_request.user.login != 'github-actions[bot]')"
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref || github.ref }}
+    - run: make dev/src && rm -r src && mv dev/src src
+    - name: Change PSR-4 to PSR-0 in composer.json
+      uses: mingjun97/file-regex-replace@v1
+      with:
+        regex: '"autoload"([^\}]+)"psr-4"' # regexr.com/6prvb
+        replacement: '"autoload"$1"psr-0"'
+        # flags: "g"                  # Optional, defaults to "g"
+        include: 'composer\.json'    # Optional, defaults to ".*"
+        # exclude: '.^'               # Optional, defaults to '.^'
+        # encoding: 'utf8'            # Optional, defaults to 'utf8'
+        path: ./ # Optional, defaults to '.'
+    - name: Comment out src-namespace-prefix in plugin.yml
+      uses: mingjun97/file-regex-replace@v1
+      with:
+        regex: '^src-namespace-prefix: (.+)'
+        replacement: '#src-namespace-prefix: $1 # PSR-4 to PSR-0 conversion workflow by Endermanbugzjfc (https://gist.github.com/Endermanbugzjfc/669e241050f5dd50dd8e6353db65545c)'
+        flags: "gm"                  # Optional, defaults to "g"
+        include: 'plugin\.yml'    # Optional, defaults to ".*"
+        # exclude: '.^'               # Optional, defaults to '.^'
+        # encoding: 'utf8'            # Optional, defaults to 'utf8'
+        path: ./ # Optional, defaults to '.'
+    - uses: peter-evans/create-pull-request@v4
+      id: cpr
+      with:
+        base: poggit
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: ${{ github.event.pull_request.body || 'PSR-4 to PSR-0 conversion workflow dispatch' }}
+        title: PSR-4 to PSR-0 conversion for poggit after merging ${{ github.head_ref || github.ref }}
+        branch: psr-420/${{ github.sha }}
+        delete-branch: true
+        assignees: ${{ github.actor }}
+        body: |
+          Please apply these changes on the poggit branch for Poggit-CI to build the PHAR correctly.
+    - name: Set next step parameters under no PR creation context
+      id: param4comment
+      if: "!steps.cpr.outputs.pull-request-number"
+      run: |
+        echo "cpr step outputs: ${{ steps.cpr.outputs.pull-request-number }}"
+        echo "::set-output name=strikethrough::~~"
+    - uses: thollander/actions-comment-pull-request@v1
+      if: contains(github.event_name, 'pull_request')
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # ([] means conditional):
+        #
+        # - [~~]Merge #[?] into poggit.[~~]
+        # - Ensure the version number in plugin.yml / virion.yml is bumped.
+        # - Add repository to Poggit-CI.
+        # - Create the release.
+        # - delete branck
+        message: |
+          # Checklist
+          Well done, @${{ github.event.pull_request.user.login || github.actor }}! Just few steps before everything is ready:
+          - [ ] ${{ steps.param4comment.outputs.strikethrough || '' }}Merge #${{ steps.cpr.outputs.pull-request-number || '?' }} into poggit.${{ steps.param4comment.outputs.strikethrough || '' }}
+          - [ ] Ensure the version number in [plugin.yml](
+          ${{ github.server_url }}/${{ github.repository }}/blob/poggit/plugin.yml
+          ) / [virion.yml](
+          ${{ github.server_url }}/${{ github.repository }}/blob/poggit/virion.yml
+          ) is bumped.
+          - [ ] Add repository to [Poggit-CI](https://poggit.pmmp.io/ci).
+          - [ ] [Create](
+          ${{ github.server_url }}/${{ github.repository }}/releases/new
+          ) the release.
+          - [ ] delete branck
