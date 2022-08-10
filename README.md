@@ -7,7 +7,8 @@ But can also be used as an API (virion) or plugin for instant use.
 Combat modes are enabled in pairs. Two players in the same combat mode pair can only attack / get attacked by each other. Damage cannot be dealed if they try to attack any other entity or vice versa.
 
 > so combat lock of sorts
-- [Thunder33345#9999](https://discord.com/channels/373199722573201408/430364566027763744/1006997537716183152)
+>
+> -- <cite>[Thunder33345#9999](https://discord.com/channels/373199722573201408/430364566027763744/1006997537716183152)</cite>
 # API
 ## Preparation
 ```php
