@@ -1,28 +1,56 @@
 # ZekCau
+ZekCau (Cantonese of 隻抽, means "go it alone") is an example implementation of PocketMine-MP dual-players combat mode using [Await-Std](https://github.com/SOF3/await-std).
 
-This repository contains a basic example of a modern PocketMine-MP plugin, and a handful of the API features.
-
-## PHPStan analysis
-This repository shows an example setup for standalone local analysis of a plugin using [PHPStan](https://phpstan.org).
-
-It uses [Composer](https://getcomposer.org) for autoloading, allowing you to install PHPStan extensions such as [phpstan-strict-rules](https://github.com/phpstan/phpstan-strict-rules). The configuration for this can be seen in [`phpstan/composer.json`](/phpstan/composer.json).
-
-### Setting up PHPStan
-Assuming you have Composer and a compatible PHP binary available in your PATH, run:
+But can also be used as an API (virion) or plugin for instant use.
+# API
+## Preparation
+```php
+use Endermanbugzjfc\ZekCau\CombatMode;
+use SOFe\AwaitStd\AwaitStd;
 ```
-cd phpstan
-composer install
+You must initialize an AwaitStd instance before calling any functions in CombatMode:
+```php
+CombatMode::$std = $std = AwaitStd::init($this);
 ```
+## Usage
+autoEnable() will enable combat mode for two players when one attack another.
 
-Then you can run PHPStan exactly as you would with any other project:
+The `$until` callback is called every time when they attack each other, means the combat mode timer should be reset. So a new generator is returned:
+```php
+CombatMode::autoEnable(function () use ($std) : \Generator {
+	// Each combat mode will least for 15 seconds. The timer resets on damage.
+	yield from $std->sleep(15 * 20);
+});
 ```
-vendor/bin/phpstan analyze
-```
+You are not limited to just return the generator, side effects can be created too. Such as sending popups (or updating a boss bar):
+```php
+CombatMode::autoEnable(function (Player $a, Player $b) use ($std) : \Generator {
+	foreach ([$a, $b] as $player) {
+		$player->sendPopup("Combat mode timer resets!");
+	}
 
-### Updating the dependencies
+	// Each combat mode will least for 15 seconds. The timer resets on damage.
+	yield from $std->sleep(15 * 20);
+});		
 ```
-composer update
-```
+## Count down popup example
+```php
+$running = 0;
+CombatMode::autoEnable(function (Player $a, Player $b) use ($std, &$running) : \Generator {
+	// Avoid two generators running at the same time and send overlapping popups.
+	$current = ++$running;
 
-### GitHub Actions
-You can find a workflow suitable for analysing most plugins using this system in [`.github/workflows/main.yml`](/.github/workflows/main.yml).
+	for ($seconds = 15; $seconds > 0; $seconds--) {
+		foreach ([$a, $b] as $player) {
+			$player->sendPopup("Combat mode count down: $seconds seconds.");
+		}
+
+		yield from $std->sleep(20); // Sleep 1 second.
+		if ($running !== $current) {
+			return;
+		}
+	}
+
+	$running = 0;
+});
+```
