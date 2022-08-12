@@ -53,7 +53,7 @@ final class CombatMode {
 	}
 
 	public static function autoEnable(CombatSession $s) : void {
-		Await::f2c(function () : \Generator {
+		Await::f2c(function ($s) : \Generator {
 			while (true) {
 				$awaitEvent = $s->awaitEvent(
 					EntityDamageByEntityEvent::class,
