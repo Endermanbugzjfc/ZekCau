@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace Endermanbugzjfc\ZekCau\Plugin;
 
+use Endermanbugzjfc\ZekCau\CombatMode;
+use Endermanbugzjfc\ZekCau\CombatSession;
 use SOFe\AwaitStd\AwaitStd;
 use pocketmine\plugin\PluginBase;
 
 final class MainClass extends PluginBase {
 	public function onEnable() : void{
-		CombatMode::$std = $std = AwaitStd::init($this);
-		CombatMode::autoEnable(function () use ($std) : \Generator {
-			// Each combat mode will least for 15 seconds. The timer resets on damage.
-			yield from $std->sleep(15 * 20);
-		});
-	}
-
-	public function onDisable() : void{
-		unset(CombatMode::$std);
+		$std = AwaitStd::init($this);
+		CombatMode::autoEnable($this, new CombatSession(
+			$std,
+			static fn(CombatSession $s) : \Generator => yield from $s->std()->sleep(15 * 20),
+		));
 	}
 }

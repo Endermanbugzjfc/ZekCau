@@ -11,6 +11,7 @@ use SOFe\AwaitStd\DisposableListener;
 use pocketmine\event\EventPriority;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\player\Player;
+use pocketmine\plugin\Plugin;
 
 /**
  * @api
@@ -20,15 +21,13 @@ final class CombatMode {
 		Await::f2c(function () use ($s) : \Generator {
 			$awaitUntil = $s->until();
 			while (true) {
-				$awaitEvent = $s->awaitEvent(
-					...[
-						EntityDamageByEntityEvent::class,
-						fn(EntityDamageByEntityEvent $event) => in_array($event->getDamager(), $s->players(), true) || in_array($event->getEntity(), $s->players(), true),
-						false,
-						EventPriority::NORMAL,
-						false,
-						...$s->players()
-					]
+				$awaitEvent = $s->std()->awaitEvent(
+					EntityDamageByEntityEvent::class,
+					fn(EntityDamageByEntityEvent $event) => in_array($event->getDamager(), $s->players(), true) || in_array($event->getEntity(), $s->players(), true),
+					false,
+					EventPriority::NORMAL,
+					false,
+					...$s->players()
 				);
 				[, $event] = yield from Await::race([$awaitEvent, $awaitUntil]);
 
@@ -49,13 +48,13 @@ final class CombatMode {
 						break;
 				}
 			}
-		}, null, [DisposableListener::class => static fn() => null]);
+		}, null, [DisposableListener::class => static function () : void {}]);
 	}
 
-	public static function autoEnable(CombatSession $s) : void {
-		Await::f2c(function ($s) : \Generator {
-			while (true) {
-				$awaitEvent = $s->awaitEvent(
+	public static function autoEnable(Plugin $plugin, CombatSession $s) : void {
+		Await::f2c(function () use ($s, $plugin) : \Generator {
+			while ($plugin->isEnabled()) {
+				$awaitEvent = $s->std()->awaitEvent(
 					EntityDamageByEntityEvent::class,
 					static fn(EntityDamageByEntityEvent $event) => true,
 					false,
@@ -67,7 +66,7 @@ final class CombatMode {
 				$a = $event->getDamager();
 				$b = $event->getEntity();
 				if ($a instanceof Player && $b instanceof Player) {
-					$this->enable($s->open($a, $b));
+					self::enable($s->open($a, $b));
 				}
 			}
 		});

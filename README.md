@@ -13,52 +13,51 @@ Combat modes are enabled in pairs. Two players in the same combat mode pair can 
 ## Preparation
 ```php
 use Endermanbugzjfc\ZekCau\CombatMode;
+use Endermanbugzjfc\ZekCau\CombatSession;
 use SOFe\AwaitStd\AwaitStd;
 ```
-You must initialize an AwaitStd instance before calling any functions in CombatMode:
+Initialize an AwaitStd instance.
 ```php
-CombatMode::$std = $std = AwaitStd::init($this);
+$std = AwaitStd::init($this);
 ```
 ## Usage
 `autoEnable()` will enable combat mode for two players when one attacks another.
 
-The `$until` callback is called every time when they attack each other, means the combat mode timer should be reset. So a new generator is created:
+The `$until` callback is called every time when they attack each other, means the combat mode timer should be reset by creating a new generator. The following code returns a sleep-generator (generator version of delayed task) of 15 seconds:
 ```php
-CombatMode::autoEnable(function () use ($std) : \Generator {
-	// Each combat mode will least for 15 seconds. The timer resets on damage.
-	yield from $std->sleep(15 * 20);
-});
+CombatMode::autoEnable($this, new CombatSession(
+	$std,
+	static fn(CombatSession $s) : \Generator => yield from $s->std()->sleep(15 * 20),
+));
 ```
 You are not limited to just `yield from` a sleep-generator, side effects can be made too. Such as sending popups (or updating a boss bar):
 ```php
-CombatMode::autoEnable(function (Player $a, Player $b) use ($std) : \Generator {
-	foreach ([$a, $b] as $player) {
+CombatMode::autoEnable($std, static function (CombatSession $s) : \Generator {
+	foreach ($s->players() as $player) {
 		$player->sendPopup("Combat mode timer resets!");
 	}
 
-	// Each combat mode will least for 15 seconds. The timer resets on damage.
 	yield from $std->sleep(15 * 20);
 });		
 ```
 ## Count down popup example
 ```php
-$running = 0;
-CombatMode::autoEnable(function (Player $a, Player $b) use ($std, &$running) : \Generator {
+CombatMode::autoEnable($this, new CombatSession($std, static function (CombatSession $s) : \Generator {
 	// Avoid two generators running at the same time and send overlapping popups.
-	// Notice that there is an & in &$running, which references $running outside of this (closure) function. PHP variable referencing explained: https://stackoverflow.com/a/10304027
+	static $running = 0; // $running will not reset after this (closure) function ends because of static.
 	$current = ++$running;
 
 	for ($seconds = 15; $seconds > 0; $seconds--) {
-		foreach ([$a, $b] as $player) {
+		foreach ($s->players() as $player) {
 			$player->sendPopup("Combat mode count down: $seconds seconds.");
 		}
 
 		yield from $std->sleep(20); // Sleep 1 second.
 		if ($running !== $current) {
-			return; // New generator is created. Stop this one to not send overlapping popups and waste system resources (redundantly yielding from sleep-generator).
+			return; // New generator is created. Stop this one to not send overlapping popups and waste system resources (redundantly creating sleep-generators).
 		}
 	}
 
 	$running = 0;
-});
+}));
 ```
