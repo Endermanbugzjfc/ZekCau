@@ -16,28 +16,19 @@ use pocketmine\player\Player;
  * @api
  */
 final class CombatMode {
-	public static AwaitStd $std;
-
-	/**
-	 * @param \Closure(Player $a, Player $b): \Generator<mixed, mixed, mixed, void> $until Creates a new generator which with can end the combat mode by resolving.
-	 */
-	public static function enable(Player $a, Player $b, \Closure $until) : void {
-		Await::f2c(function () use ($a, $b, $until) : \Generator {
-			if (!isset(self::$std)) {
-				throw new \RuntimeException('Put this in your onEnable(): \Endermanbugzjfc\ZekCau\CombatMode::$std = \SOFe\AwaitStd\AwaitStd::init($this);');
-			}
-
-			$until = fn() => $until($a, $b);
-			$awaitUntil = $until();
+	public static function enable(CombatSession $s) : void {
+		Await::f2c(function () use ($s) : \Generator {
+			$awaitUntil = $s->until();
 			while (true) {
-				$awaitEvent = self::$std->awaitEvent(
-					EntityDamageByEntityEvent::class,
-					fn(EntityDamageByEntityEvent $event) => in_array($event->getDamager(), [$a, $b], true) || in_array($event->getEntity(), [$a, $b], true),
-					false,
-					EventPriority::NORMAL.
-					false,
-					$a,
-					$b
+				$awaitEvent = $s->awaitEvent(
+					...[
+						EntityDamageByEntityEvent::class,
+						fn(EntityDamageByEntityEvent $event) => in_array($event->getDamager(), $s->players(), true) || in_array($event->getEntity(), $s->players(), true),
+						false,
+						EventPriority::NORMAL,
+						false,
+						...$s->players()
+					]
 				);
 				[, $event] = yield from Await::race([$awaitEvent, $awaitUntil]);
 
@@ -47,27 +38,24 @@ final class CombatMode {
 						return;
 
 					// Attacked / get attacked by other entities when in combat mode.
-					case !in_array($event->getDamager(), [$a, $b], true) || !in_array($event->getEntity(), [$a, $b], true):
+					case !in_array($event->getDamager(), $s->players(), true) || !in_array($event->getEntity(), $s->players(), true):
 						$event->cancel();
 						// TODO: knockback.
 						break;
 
 					// Next until generator (reset combat mode timer).
 					default:
-						$awaitUntil = $until();
+						$awaitUntil = $s->until();
 						break;
 				}
 			}
 		}, null, [DisposableListener::class => static fn() => null]);
 	}
 
-	/**
-	 * @param \Closure(Player $a, Player $b): \Generator<mixed, mixed, mixed, void> $until Creates a new generator which with can end the combat mode by resolving.
-	 */
-	public static function autoEnable(callable $until) : void {
-		Await::f2c(function () use ($player) : \Generator {
+	public static function autoEnable(CombatSession $s) : void {
+		Await::f2c(function () : \Generator {
 			while (true) {
-				$awaitEvent = self::$std->awaitEvent(
+				$awaitEvent = $s->awaitEvent(
 					EntityDamageByEntityEvent::class,
 					static fn(EntityDamageByEntityEvent $event) => true,
 					false,
@@ -79,7 +67,7 @@ final class CombatMode {
 				$a = $event->getDamager();
 				$b = $event->getEntity();
 				if ($a instanceof Player && $b instanceof Player) {
-					self::enable($a, $b, $until);
+					$this->enable($s->open($a, $b));
 				}
 			}
 		});
