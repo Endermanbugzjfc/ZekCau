@@ -83,9 +83,9 @@ dev/ConsoleScript.php: Makefile
 # 	wget -O $@ https://poggit.pmmp.io/v.dl/sof3/rwlock.php/rwlock.php/^0.1.0
 # 	touch $@
 
-# dev/await-generator.phar: Makefile
-# 	wget -O $@ https://poggit.pmmp.io/v.dl/SOF3/await-generator/await-generator/^3.4.0
-# 	touch $@
+dev/await-generator.phar: Makefile
+	wget -O $@ https://poggit.pmmp.io/v.dl/SOF3/await-generator/await-generator/^3.4.0
+	touch $@
 
 dev/await-std.phar: Makefile
 	wget -O $@ https://poggit.pmmp.io/v.dl/SOF3/await-std/await-std/^0.2.0
