@@ -1,6 +1,6 @@
 name: ZekCau
 main: Endermanbugzjfc\ZekCau\Plugin\MainClass
-src-namespace-prefix: Endermanbugzjfc\ZekCau
+# src-namespace-prefix: Endermanbugzjfc\ZekCau
 version: 1.0.0
 api: 4.0.0
 
