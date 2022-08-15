@@ -1,15 +1,18 @@
 <?php
 
+use Endermanbugzjfc\ZekCau\Plugin\MainClass;
 use SOFe\AwaitStd\AwaitStd;
 use SOFe\SuiteTester\Await;
 use SOFe\SuiteTester\Main;
-use Endermanbugzjfc\HyundaiCommando\MainClass;
 use muqsit\fakeplayer\network\listener\ClosureFakePlayerPacketListener;
 use pocketmine\Server;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
+use pocketmine\entity\EntityFactory;
+use pocketmine\entity\Zombie;
 use pocketmine\event\Event;
 use pocketmine\event\EventPriority;
+use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\plugin\PluginEnableEvent;
 use pocketmine\network\mcpe\NetworkSession;
@@ -50,22 +53,21 @@ class Context {
             handleCancelled: false,
         );
     }
+
+    public function findZombie(Player $player) : Zombie {
+        $zombie = null;
+        foreach ($admin->getWorld()->getEntites() as $entity) {
+            if ($entity instanceof Zombie) {
+                return $entity;
+            }
+        }
+
+        throw new \RuntimeException("The zombie is not in the same world as player");
+    }
 }
 
 function init_steps(Context $context) : Generator {
-    yield "register server crasher command" => function() use ($context) {
-        false && yield;
-        $context->server->getCommandMap()->register("fbp", new class("crasher", "Crash server", "/crasher", ["crash"]) extends Command {
-            /**
-             * @param mixed[] $args
-             */
-            public function execute(CommandSender $sender, string $aliasUsed, array $args) : void {
-                throw new \RuntimeException("Crasher command executed");
-            }
-        });
-    };
-
-    yield "wait for HyundaiCommando to initialize" => function() use($context) {
+    yield "wait for ZekCau to initialize" => function() use($context) {
         yield from $context->std->awaitEvent(PluginEnableEvent::class, fn(PluginEnableEvent $event) : bool => $event->getPlugin() instanceof MainClass, false, EventPriority::MONITOR, false);
     };
 
@@ -98,26 +100,71 @@ function init_steps(Context $context) : Generator {
             ));
         }
     };
+
+    yield "spawn one zombie near one player" => function () use ($context) {
+        yield from [];
+
+        $player = $context->server->getOnlinePlayers()[0] ?? throw new \RuntimeException("No player to spawn zombie nearby");
+        new Zombie($player->getPosition());
+    };
+
+    yield "control one player to attack another" => function () use ($context) {
+        yield from [];
+
+        $a = $context->server->getOnlinePlayers()[0] ?? throw new \RuntimeException("Server has 0 players");
+        $b = $context->server->getOnlinePlayers()[0] ?? throw new \RuntimeException("Server has 1 player only");
+        Await::f2c(function () use ($context, $a, $b) : \Generator {
+            yield from $context->std->sleep(0);
+            $a->attackEntity($b);
+        });
+
+        $event = yield from $context->std->awaitEvent(
+            EntityDamageByEntityEvent::class,
+            static fn() => true,
+            false,
+            EventPriority::MONITOR,
+            false,
+            $a,
+            $b
+        );
+        $damager = $event->getDamager();
+        if ($damager !== $a) {
+            throw new \RuntimeException("Damager is not \"" . $a->getName() . "\"");
+        }
+        $entity = $event->getEntity();
+        if ($entity !== $b) {
+            throw new \RuntimeException("Entity is not \"" . $b->getName() . "\"");
+        }
+    }
 }
 
-
-function crash_protector_test(Context $context, string $adminName) : Generator {
-    $value = "false";
-
-    yield "execute /crash with value" => function() use($context, $adminName, $value) {
-        false && yield;
-
-        Await::f2c(function() use ($context, $adminName, $value) : \Generator {
+function zombie_attack_test(Context $context, string $playerName) : Generator {
+    yield "control the zombie to attack player" => function() use($context, $playerName) {
+        $player = $context->server->getPlayerExact($playerName);
+        $zombie = $context->findZombie($player);
+        Await::f2c(function () use ($context, $player, $zombie) : \Generator {
             yield from $context->std->sleep(0);
-        $admin = $context->server->getPlayerExact($adminName);
-        $admin->chat("/crash $value");
+            $zombie->attackEntity($player);
         });
-    };
-    yield "wait error message" => function() use($context, $adminName, $value) {
-        $admin = $context->server->getPlayerExact($adminName);
 
-        yield from Await::all([
-            $context->awaitMessage($admin, "Invalid value '$value' for argument #1"),
-        ]);
+        $event = yield from $context->awaitEvent(
+            EntityDamageByEntityEvent::class,
+            static fn() => true,
+            false,
+            EventPriority::MONITOR,
+            true, // Handle cancelled.
+            $player
+        );
+        $damager = $event->getDamager();
+        if ($damager !== $a) {
+            throw new \RuntimeException("Damager is not \"" . $a->getName() . "\"");
+        }
+        $entity = $event->getEntity();
+        if ($entity !== $b) {
+            throw new \RuntimeException("Entity is not \"" . $b->getName() . "\"");
+        }
+        if (!$event->isCancelled()) {
+            throw new \RuntimeException("Event is not cancelled");
+        }
     };
 }
