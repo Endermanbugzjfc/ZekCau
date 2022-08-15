@@ -104,7 +104,7 @@ function init_steps(Context $context) : Generator {
     yield "spawn one zombie near one player" => function () use ($context) {
         yield from [];
 
-        $player = $context->server->getOnlinePlayers()[0] ?? throw new \RuntimeException("No player to spawn zombie nearby");
+        $player = array_values($context->server->getOnlinePlayers())[0] ?? throw new \RuntimeException("No player to spawn zombie nearby");
         new Zombie($player->getPosition());
     };
 
