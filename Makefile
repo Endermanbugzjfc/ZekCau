@@ -117,7 +117,7 @@ dev/FakePlayer.phar: Makefile
 
 suitetest: $(SUITE_TESTS)
 
-# SKIP_MYSQL = true # no mysql in zek cau
+SKIP_MYSQL = true # no mysql in zek cau
 
 # $(SUITE_TESTS): dev/ZekCau.phar dev/FakePlayer.phar dev/InfoAPI.phar dev/SuiteTester.phar
 $(SUITE_TESTS): dev/ZekCau.phar dev/FakePlayer.phar dev/SuiteTester.phar
