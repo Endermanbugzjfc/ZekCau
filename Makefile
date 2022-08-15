@@ -22,7 +22,7 @@ SUITE_TESTS_CONFIG_REGEN = false
 # ZEK_CAU_SOURCE_FILES = plugin.yml $(shell find src resources -type f)
 ZEK_CAU_SOURCE_FILES = plugin.yml $(shell find src -type f)
 # ZEK_CAU_VIRIONS = dev/await-generator.phar dev/await-std.phar dev/libasynql.phar dev/rwlock.phar
-ZEK_CAU_VIRIONS = dev/await-std.phar
+ZEK_CAU_VIRIONS = dev/await-std.phar dev/await-generator.phar
 
 # .PHONY: all phpstan fmt debug/suite-mysql suitetest $(SUITE_TESTS)
 .PHONY: all phpstan fmt suitetest $(SUITE_TESTS)
