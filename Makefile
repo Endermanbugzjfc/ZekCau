@@ -22,7 +22,7 @@ SUITE_TESTS_CONFIG_REGEN = false
 # ZEK_CAU_SOURCE_FILES = plugin.yml $(shell find src resources -type f)
 ZEK_CAU_SOURCE_FILES = plugin.yml $(shell find src -type f)
 # ZEK_CAU_VIRIONS = dev/await-generator.phar dev/await-std.phar dev/libasynql.phar dev/rwlock.phar
-ZEK_CAU_VIRIONS = dev/await-generator.phar dev/await-std.phar dev/libMarshal.phar dev/Commando.phar
+ZEK_CAU_VIRIONS = dev/await-std.phar
 
 # .PHONY: all phpstan fmt debug/suite-mysql suitetest $(SUITE_TESTS)
 .PHONY: all phpstan fmt suitetest $(SUITE_TESTS)
@@ -83,21 +83,21 @@ dev/ConsoleScript.php: Makefile
 # 	wget -O $@ https://poggit.pmmp.io/v.dl/sof3/rwlock.php/rwlock.php/^0.1.0
 # 	touch $@
 
-dev/await-generator.phar: Makefile
-	wget -O $@ https://poggit.pmmp.io/v.dl/SOF3/await-generator/await-generator/^3.4.0
-	touch $@
+# dev/await-generator.phar: Makefile
+# 	wget -O $@ https://poggit.pmmp.io/v.dl/SOF3/await-generator/await-generator/^3.4.0
+# 	touch $@
 
 dev/await-std.phar: Makefile
 	wget -O $@ https://poggit.pmmp.io/v.dl/SOF3/await-std/await-std/^0.2.0
 	touch $@
 
-dev/libMarshal.phar: Makefile
-	wget -O $@ "https://poggit.pmmp.io/v.dl/sylvrs/libMarshal/libMarshal/%5E1.4.0?branch=feature/virion"
-	touch $@
+# dev/libMarshal.phar: Makefile
+# 	wget -O $@ "https://poggit.pmmp.io/v.dl/sylvrs/libMarshal/libMarshal/%5E1.4.0?branch=feature/virion"
+# 	touch $@
 
-dev/Commando.phar: Makefile
-	wget -O $@ https://poggit.pmmp.io/v.dl/Endermanbugzjfc/Commando/Commando/^3.1.0
-	touch $@
+# dev/Commando.phar: Makefile
+# 	wget -O $@ https://poggit.pmmp.io/v.dl/Endermanbugzjfc/Commando/Commando/^3.1.0
+# 	touch $@
 
 dev/SuiteTester.phar: suitetest/plugin/plugin.yml \
 	$(shell find suitetest/plugin/src -type f) \
