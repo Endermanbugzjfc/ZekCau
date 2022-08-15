@@ -135,7 +135,7 @@ function init_steps(Context $context) : Generator {
         if ($entity !== $b) {
             throw new \RuntimeException("Entity is not \"" . $b->getName() . "\"");
         }
-    }
+    };
 }
 
 function zombie_attack_test(Context $context, string $playerName) : Generator {
