@@ -111,8 +111,9 @@ function init_steps(Context $context) : Generator {
     yield "control one player to attack another" => function () use ($context) {
         yield from [];
 
-        $a = $context->server->getOnlinePlayers()[0] ?? throw new \RuntimeException("Server has 0 players");
-        $b = $context->server->getOnlinePlayers()[0] ?? throw new \RuntimeException("Server has 1 player only");
+        $players = array_values($context->server->getOnlinePlayers());
+        $a = $players[0] ?? throw new \RuntimeException("Server has 0 players");
+        $b = $players[1] ?? throw new \RuntimeException("Server has 1 player only");
         Await::f2c(function () use ($context, $a, $b) : \Generator {
             yield from $context->std->sleep(0);
             $a->attackEntity($b);
