@@ -8,6 +8,7 @@ use muqsit\fakeplayer\network\listener\ClosureFakePlayerPacketListener;
 use pocketmine\Server;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
+use pocketmine\entity\Entity;
 use pocketmine\entity\EntityFactory;
 use pocketmine\entity\Zombie;
 use pocketmine\event\Event;
@@ -64,6 +65,12 @@ class Context {
 
         throw new \RuntimeException("The zombie is not in the same world as player");
     }
+
+    public function aAttackB(Entity $a, Entity $b) : void {
+        if (!$zombie->attackEntity($player)) {
+            throw new \RuntimeException("Entity attack failed");
+        }
+    }
 }
 
 function init_steps(Context $context) : Generator {
@@ -116,7 +123,7 @@ function init_steps(Context $context) : Generator {
         $b = $players[1] ?? throw new \RuntimeException("Server has 1 player only");
         Await::f2c(function () use ($context, $a, $b) : \Generator {
             yield from $context->std->sleep(0);
-            $a->attackEntity($b);
+            $context->aAttackB($a, $b);
         });
 
         $event = yield from $context->std->awaitEvent(
@@ -145,7 +152,7 @@ function zombie_attack_test(Context $context, string $playerName) : Generator {
         $zombie = $context->findZombie($player);
         Await::f2c(function () use ($context, $player, $zombie) : \Generator {
             yield from $context->std->sleep(0);
-            $zombie->attackEntity($player);
+            $context->aAttackB($zombie, $player);
         });
 
         $event = yield from $context->awaitEvent(
