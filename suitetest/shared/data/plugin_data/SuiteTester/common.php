@@ -127,7 +127,6 @@ function init_steps(Context $context) : Generator {
         $aFake = $context->fakePlayer->getFakePlayer($a);
         Await::f2c(function () use ($context, $aFake, $behaviour, $b) : \Generator {
             yield from $context->std->sleep(0);
-            $aFake->getPlayer()->setTargetEntity($b);
             $aFake->addBehaviour($behaviour);
         });
 
@@ -162,13 +161,18 @@ function player_attack_test(Context $context, string $a, string $b, string $c) :
             yield from $context->std->sleep(0);
             $context->fakePlayer->getFakePlayer($carrie)->addBehaviour($behaviour);
         });
-        $combatMode = true;
-        Await::f2c(function () use ($context, &$combatMode) : \Generator {
-            yield from $context->std->sleep(14 * 20);
-            $combatMode = false;
+        $state = 1;
+        Await::f2c(function () use ($context, &$state) : \Generator {
+            yield from $context->std->sleep(15 * 20);
+            $state = 0;
+            yield from $context->std->sleep(2 * 20);
+            $state = -1;
+            yield from $context->std->sleep(2 * 20);
+            $state = -2;
         });
 
-        while (true) {
+        $cancelTimes = $unhandleTimes = $hitTimes = 0;
+        do {
             $event = yield from $context->std->awaitEvent(
                 EntityDamageByEntityEvent::class,
                 static fn() => true,
@@ -182,23 +186,30 @@ function player_attack_test(Context $context, string $a, string $b, string $c) :
                 throw new \RuntimeException("Damager is not \"" . $carrie->getName() . "\"");
             }
             $entity = $event->getEntity();
+            $cancelled = $event->isCancelled();
             switch (true) {
-                case $entity === $player:
-                    $carrie->setTargetEntity($player2);
+                case $cancelled && ($state === 1 || $state === -1):
+                    $context->server->getLogger()->debug("Cancel times: " . ++$cancelTimes);
                     break;
 
-                case $entity === $player2:
-                    $carrie->setTargetEntity($player);
+                case $state === 0:
+                    $context->server->getLogger()->debug("Unhandle times: " . ++$unhandleTimes);
                     break;
+
+                case !$cancelled && $state === -1:
+                    $context->server->getLogger()->debug("Hit times: " . ++$hitTimes);
+                    
+                    break;
+
+                case !$cancelled && $state === 1:
+                    throw new \RuntimeException("State 1 but NOT cancelled");
+
+                case $state === -2:
+                    break 2;
 
                 default:
-                    throw new \RuntimeException("Entity is not \"" . $player->getName() . "\" or \"" . $player2->getName() . "\"");
+                    throw new \RuntimeException("Unknown state $state");
             }
-            if ($combatMode && !$event->isCancelled()) {
-                throw new \RuntimeException("COMBAT mode, NOT cancelled");
-            } elseif (!$combatMode && $event->isCancelled()) {
-                throw new \RuntimeException("FREE mode, cancelled");
-            }
-        }
+        } while ($state > -2);
     };
 }

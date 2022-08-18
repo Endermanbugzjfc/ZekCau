@@ -18,11 +18,20 @@ use function in_array;
  */
 final class CombatMode
 {
+    /**
+     * Init a new / reset an existed combat session.
+     */
     public static function enable(CombatSession $s) : void
     {
         Await::f2c(function () use ($s) : Generator {
-            $awaitUntil = $s->until();
-            while (true) {
+            $event = null;
+            do {
+                if (isset($event) && (!in_array($event->getDamager(), $s->players(), true) || !in_array($event->getEntity(), $s->players(), true))) {
+                    $event->cancel();
+                } else {
+                    $s->resetUntil();
+                }
+
                 $awaitEvent = $s->std()->awaitEvent(
                     EntityDamageByEntityEvent::class,
                     fn(EntityDamageByEntityEvent $event) => in_array($event->getDamager(), $s->players(), true) || in_array($event->getEntity(), $s->players(), true),
@@ -31,25 +40,9 @@ final class CombatMode
                     false,
                     ...$s->players()
                 );
-                [, $event] = yield from Await::race([$awaitEvent, $awaitUntil]);
-
-                switch (true) {
-                    // $until generator is resolved. Combat mode ends.
-                    case !$event instanceof EntityDamageByEntityEvent:
-                        return;
-
-                        // Attacked / get attacked by other entities when in combat mode.
-                    case !in_array($event->getDamager(), $s->players(), true) || !in_array($event->getEntity(), $s->players(), true):
-                        $event->cancel();
-                        // TODO: knockback.
-                        break;
-
-                        // Next until generator (reset combat mode timer).
-                    default:
-                        $awaitUntil = $s->until();
-                        break;
-                }
-            }
+                [, $event] = yield from Await::race([$awaitEvent, $s->until()]);
+            } while ($event instanceof EntityDamageByEntityEvent);
+            $s->close();
         }, null, [DisposableListener::class => static function () : void {
         }]);
     }
@@ -70,7 +63,10 @@ final class CombatMode
                 $a = $event->getDamager();
                 $b = $event->getEntity();
                 if ($a instanceof Player && $b instanceof Player) {
-                    self::enable($s->open($a, $b));
+                    $opened = $s->open($a, $b);
+                    if ($opened !== null) {
+                        self::enable($opened);
+                    }
                 }
             }
         });
