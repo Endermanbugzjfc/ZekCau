@@ -44,7 +44,7 @@ fmt: $(shell find src -type f) .php-cs-fixer.php vendor
 dev/plugin.yml: plugin.yml
 	cp -f plugin.yml dev/plugin.yml
 
-dev/src: src Makefile
+dev/src: src/* Makefile
 	$(eval PARENT := dev/src/$(shell dirname $(SRC_NAMESPACE_PREFIX)))
 	rm -rf "dev/src"
 	mkdir -p $(PARENT)
