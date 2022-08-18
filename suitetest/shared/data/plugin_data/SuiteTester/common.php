@@ -4,6 +4,8 @@ use Endermanbugzjfc\ZekCau\Plugin\MainClass;
 use SOFe\AwaitStd\AwaitStd;
 use SOFe\SuiteTester\Await;
 use SOFe\SuiteTester\Main;
+use muqsit\fakeplayer\Loader;
+use muqsit\fakeplayer\behaviour\PvPFakePlayerBehaviour;
 use muqsit\fakeplayer\network\listener\ClosureFakePlayerPacketListener;
 use pocketmine\Server;
 use pocketmine\command\Command;
@@ -36,11 +38,22 @@ class Context {
     public $std;
     public Plugin $plugin;
     public Server $server;
+    public Loader $fakePlayer;
 
     public function __construct() {
         $this->std = Main::$std;
         $this->plugin = Main::getInstance();
         $this->server = Server::getInstance();
+
+        foreach ($this->server->getPluginManager()->getPlugins() as $plugin) {
+            if ($plugin instanceof Loader) {
+                $this->fakePlayer = $plugin;
+                break;
+            }
+        }
+        if (!isset($this->fakePlayer)) {
+            throw new \RuntimeException("Failed to get fake player loader instance");
+        }
     }
 
     public function awaitMessage(Player $who, string $messageSubstring, ...$args) : Generator {
@@ -57,7 +70,7 @@ class Context {
 
     public function findZombie(Player $player) : Zombie {
         $zombie = null;
-        foreach ($admin->getWorld()->getEntites() as $entity) {
+        foreach ($player->getWorld()->getEntites() as $entity) {
             if ($entity instanceof Zombie) {
                 return $entity;
             }
@@ -67,7 +80,7 @@ class Context {
     }
 
     public function aAttackB(Entity $a, Entity $b) : void {
-        if (!$zombie->attackEntity($player)) {
+        if (!$a->attackEntity($b)) {
             throw new \RuntimeException("Entity attack failed");
         }
     }
@@ -115,15 +128,19 @@ function init_steps(Context $context) : Generator {
         new Zombie($player->getLocation());
     };
 
-    yield "control one player to attack another" => function () use ($context) {
+    yield "change the player's gamemode to survival and control one to attack another" => function () use ($context) {
         yield from [];
 
         $players = array_values($context->server->getOnlinePlayers());
         $a = $players[0] ?? throw new \RuntimeException("Server has 0 players");
         $b = $players[1] ?? throw new \RuntimeException("Server has 1 player only");
-        Await::f2c(function () use ($context, $a, $b) : \Generator {
+
+
+        $behaviour = new PvPFakePlayerBehaviour(4, PHP_INT_MAX);
+        $aFake = $context->fakePlayer->getFakePlayer($a);
+        Await::f2c(function () use ($context, $aFake) : \Generator {
             yield from $context->std->sleep(0);
-            $context->aAttackB($a, $b);
+            $aFake->addBehaviour($behaviour);
         });
 
         $event = yield from $context->std->awaitEvent(
@@ -135,6 +152,7 @@ function init_steps(Context $context) : Generator {
             $a,
             $b
         );
+        $aFake->removeBehaviour($behaviour);
         $damager = $event->getDamager();
         if ($damager !== $a) {
             throw new \RuntimeException("Damager is not \"" . $a->getName() . "\"");
