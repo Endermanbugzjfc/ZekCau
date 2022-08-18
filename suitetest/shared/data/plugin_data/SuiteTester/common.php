@@ -68,21 +68,8 @@ class Context {
         );
     }
 
-    public function findZombie(Player $player) : Zombie {
-        $zombie = null;
-        foreach ($player->getWorld()->getEntites() as $entity) {
-            if ($entity instanceof Zombie) {
-                return $entity;
-            }
-        }
-
-        throw new \RuntimeException("The zombie is not in the same world as player");
-    }
-
-    public function aAttackB(Entity $a, Entity $b) : void {
-        if (!$a->attackEntity($b)) {
-            throw new \RuntimeException("Entity attack failed");
-        }
+    public function createPvPFakePlayerBehaviour() : PvPFakePlayerBehaviour {
+        return new PvPFakePlayerBehaviour(4, 0);
     }
 }
 
@@ -91,15 +78,15 @@ function init_steps(Context $context) : Generator {
         yield from $context->std->awaitEvent(PluginEnableEvent::class, fn(PluginEnableEvent $event) : bool => $event->getPlugin() instanceof MainClass, false, EventPriority::MONITOR, false);
     };
 
-    yield "wait for two players to join" => function() use($context) {
+    yield "wait for three players to join" => function() use($context) {
         $onlineCount = 0;
         foreach($context->server->getOnlinePlayers() as $player) {
             if($player->isOnline()) {
                 $onlineCount += 1;
             }
         }
-        if($onlineCount < 2) {
-            yield from $context->std->awaitEvent(PlayerJoinEvent::class, fn($_) => count($context->server->getOnlinePlayers()) === 2, false, EventPriority::MONITOR, false);
+        if($onlineCount < 3) {
+            yield from $context->std->awaitEvent(PlayerJoinEvent::class, fn($_) => count($context->server->getOnlinePlayers()) === 3, false, EventPriority::MONITOR, false);
         }
 
         yield from $context->std->sleep(10);
@@ -128,7 +115,7 @@ function init_steps(Context $context) : Generator {
         new Zombie($player->getLocation());
     };
 
-    yield "change the player's gamemode to survival and control one to attack another" => function () use ($context) {
+    yield "control one to attack another" => function () use ($context) {
         yield from [];
 
         $players = array_values($context->server->getOnlinePlayers());
@@ -136,10 +123,11 @@ function init_steps(Context $context) : Generator {
         $b = $players[1] ?? throw new \RuntimeException("Server has 1 player only");
 
 
-        $behaviour = new PvPFakePlayerBehaviour(4, PHP_INT_MAX);
+        $behaviour = $context->createPvPFakePlayerBehaviour();
         $aFake = $context->fakePlayer->getFakePlayer($a);
-        Await::f2c(function () use ($context, $aFake) : \Generator {
+        Await::f2c(function () use ($context, $aFake, $behaviour, $b) : \Generator {
             yield from $context->std->sleep(0);
+            $aFake->getPlayer()->setTargetEntity($b);
             $aFake->addBehaviour($behaviour);
         });
 
@@ -164,33 +152,53 @@ function init_steps(Context $context) : Generator {
     };
 }
 
-function zombie_attack_test(Context $context, string $playerName) : Generator {
-    yield "control the zombie to attack player" => function() use($context, $playerName) {
-        $player = $context->server->getPlayerExact($playerName);
-        $zombie = $context->findZombie($player);
-        Await::f2c(function () use ($context, $player, $zombie) : \Generator {
+function player_attack_test(Context $context, string $a, string $b, string $c) : Generator {
+    yield "control the zombie to attack player" => function() use($context, $a, $b, $c) {
+        $carrie = $context->server->getPlayerExact($a);
+        $player = $context->server->getPlayerExact($b);
+        $player2 = $context->server->getPlayerExact($c);
+        $behaviour = $context->createPvPFakePlayerBehaviour();
+        Await::f2c(function () use ($context, $carrie, $behaviour) : \Generator {
             yield from $context->std->sleep(0);
-            $context->aAttackB($zombie, $player);
+            $context->fakePlayer->getFakePlayer($carrie)->addBehaviour($behaviour);
+        });
+        $combatMode = true;
+        Await::f2c(function () use ($context, &$combatMode) : \Generator {
+            yield from $context->std->sleep(14 * 20);
+            $combatMode = false;
         });
 
-        $event = yield from $context->awaitEvent(
-            EntityDamageByEntityEvent::class,
-            static fn() => true,
-            false,
-            EventPriority::MONITOR,
-            true, // Handle cancelled.
-            $player
-        );
-        $damager = $event->getDamager();
-        if ($damager !== $a) {
-            throw new \RuntimeException("Damager is not \"" . $a->getName() . "\"");
-        }
-        $entity = $event->getEntity();
-        if ($entity !== $b) {
-            throw new \RuntimeException("Entity is not \"" . $b->getName() . "\"");
-        }
-        if (!$event->isCancelled()) {
-            throw new \RuntimeException("Event is not cancelled");
+        while (true) {
+            $event = yield from $context->std->awaitEvent(
+                EntityDamageByEntityEvent::class,
+                static fn() => true,
+                false,
+                EventPriority::MONITOR,
+                true, // Handle cancelled.
+                $player
+            );
+            $damager = $event->getDamager();
+            if ($damager !== $carrie) {
+                throw new \RuntimeException("Damager is not \"" . $carrie->getName() . "\"");
+            }
+            $entity = $event->getEntity();
+            switch (true) {
+                case $entity === $player:
+                    $carrie->setTargetEntity($player2);
+                    break;
+
+                case $entity === $player2:
+                    $carrie->setTargetEntity($player);
+                    break;
+
+                default:
+                    throw new \RuntimeException("Entity is not \"" . $player->getName() . "\" or \"" . $player2->getName() . "\"");
+            }
+            if ($combatMode && !$event->isCancelled()) {
+                throw new \RuntimeException("COMBAT mode, NOT cancelled");
+            } elseif (!$combatMode && $event->isCancelled()) {
+                throw new \RuntimeException("FREE mode, cancelled");
+            }
         }
     };
 }

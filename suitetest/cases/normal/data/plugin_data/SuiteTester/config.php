@@ -6,5 +6,5 @@ return function() {
     $context = new Context;
 
     yield from init_steps($context);
-    yield from zombie_attack_test($context, "alice");
+    yield from player_attack_test($context, "林月娥", "alice", "bob");
 };

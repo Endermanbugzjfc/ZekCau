@@ -22,5 +22,15 @@
         "behaviours": {
             "fakeplayer:auto_equip_armor": {}
         }
+    },
+    "53cad484-83fc-4686-a1d7-1da46fdaa5e3": {
+        "xuid": "7777777777777777",
+        "gamertag": "林月娥",
+        "extra_data": {
+            "DeviceId": "4a360be8-f0bf-4fea-a550-ec81674ecfcc",
+            "DeviceModel": "金太阳",
+            "DeviceOS": 777
+        },
+        "behaviours": {}
     }
 }
